@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduMitra App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #1F1F1F; color: #E0E0E0; }
+    .wave {
+      display: flex; align-items: flex-end; height: 40px;
+    }
+    .bar {
+      width: 4px; background-color: #2563EB; margin: 0 1px; border-radius: 2px;
+      animation: bounce 1s infinite ease-in-out;
+    }
+    @keyframes bounce {
+      0%, 100% { height: 8px; opacity: 0.4; }
+      50% { height: 36px; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+  const { useState, useEffect, createContext, useContext } = React;
+
+  // ---------------- CONTEXT -----------------
+  const AppContext = createContext();
+
+  const AppProvider = ({ children }) => {
+    const [user, setUser] = useState({ name: 'Aryaman', class: '10', coins: 120 });
+    const [screen, setScreen] = useState('onboarding');
+    const [progress, setProgress] = useState({ science: 80, math: 65, english: 90, sst: 75 });
+    const [aiChat, setAiChat] = useState([]);
+
+    const startSession = () => {
+      if (user.coins >= 60) {
+        setUser(prev => ({ ...prev, coins: prev.coins - 60 }));
+        setScreen('voice');
+      } else {
+        alert('Not enough EduCoins!');
+      }
+    };
+
+    const addProgress = (subject) => {
+      setProgress(prev => ({
+        ...prev,
+        [subject]: Math.min(prev[subject] + 5, 100)
+      }));
+    };
+
+    const addAiMessage = (role, text) => {
+      setAiChat(prev => [...prev, { role, text }]);
+    };
+
+    return (
+      <AppContext.Provider value={{ user, setUser, screen, setScreen, progress, addProgress, startSession, aiChat, addAiMessage }}>
+        {children}
+      </AppContext.Provider>
+    );
+  };
+
+  const useApp = () => useContext(AppContext);
+
+  // ---------------- COMPONENTS -----------------
+
+  const Onboarding = () => {
+    const { setScreen } = useApp();
+    const [slide, setSlide] = useState(0);
+
+    const slides = [
+      { title: "Meet EduMitra", text: "Your AI-powered voice tutor for CBSE 6–12." },
+      { title: "Learn Smarter", text: "Interactive 10-minute learning bursts." },
+      { title: "Achieve Success", text: "Track progress and earn EduCoins!" }
+    ];
+
+    return (
+      <div className="flex flex-col items-center justify-between h-screen p-6 bg-[#1F1F1F] text-center">
+        <div className="flex-1 flex flex-col justify-center">
+          <h1 className="text-3xl font-semibold mb-3">{slides[slide].title}</h1>
+          <p className="text-[#9E9E9E]">{slides[slide].text}</p>
+        </div>
+        <div className="flex gap-2 mb-4">
+          {slides.map((_, i) => (
+            <span key={i} className={`w-2 h-2 rounded-full ${i === slide ? 'bg-[#2563EB]' : 'bg-[#3A3A3A]'}`}></span>
+          ))}
+        </div>
+        <button
+          onClick={() => slide < 2 ? setSlide(slide + 1) : setScreen('profile')}
+          className="bg-[#2563EB] py-3 px-6 rounded-2xl text-white font-semibold w-full"
+        >
+          {slide < 2 ? "Next" : "Get Started"}
+        </button>
+      </div>
+    );
+  };
+
+  const ProfileSetup = () => {
+    const { setUser, setScreen } = useApp();
+    const [name, setName] = useState('Aryaman');
+    const [grade, setGrade] = useState('10');
+
+    const handleContinue = () => {
+      setUser({ name, class: grade, coins: 120 });
+      setScreen('dashboard');
+    };
+
+    return (
+      <div className="h-screen flex flex-col justify-between p-6 bg-[#1F1F1F]">
+        <div>
+          <h1 className="text-2xl font-semibold mb-4">Let’s set up your profile</h1>
+          <div className="mb-4">
+            <label className="block text-sm mb-1 text-[#9E9E9E]">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-3 bg-[#2E2E2E] rounded-xl text-white focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm mb-1 text-[#9E9E9E]">Class</label>
+            <select
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              className="w-full p-3 bg-[#2E2E2E] rounded-xl text-white focus:outline-none"
+            >
+              {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+        <button
+          onClick={handleContinue}
+          className="bg-[#2563EB] py-3 px-6 rounded-2xl text-white font-semibold w-full mt-4"
+        >
+          Continue
+        </button>
+      </div>
+    );
+  };
+  // ---------------- DASHBOARD -----------------
+
+  const Dashboard = () => {
+    const { user, startSession, progress, setScreen } = useApp();
+
+    return (
+      <div className="h-screen flex flex-col bg-[#1F1F1F]">
+        <header className="p-5 pb-2">
+          <h2 className="text-xl font-semibold">Welcome, {user.name}</h2>
+          <div className="text-[#9E9E9E]">Class {user.class} • CBSE</div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-5">
+          {/* EduCoins */}
+          <div className="bg-[#2E2E2E] rounded-2xl p-4 flex justify-between items-center mb-5">
+            <span className="text-lg">💎 {user.coins} EduCoins</span>
+            <button
+              onClick={startSession}
+              className="bg-[#2563EB] text-white px-4 py-2 rounded-xl font-semibold"
+            >
+              Start 10-Min Session
+            </button>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="bg-[#2E2E2E] rounded-2xl p-4 text-center">
+              <p className="text-sm text-[#9E9E9E]">Syllabus Covered</p>
+              <h2 className="text-2xl font-semibold text-[#2563EB]">73%</h2>
+            </div>
+            <div className="bg-[#2E2E2E] rounded-2xl p-4 text-center">
+              <p className="text-sm text-[#9E9E9E]">Average Score</p>
+              <h2 className="text-2xl font-semibold text-[#22C55E]">82%</h2>
+            </div>
+          </div>
+
+          {/* Resume Section */}
+          <div className="bg-[#2E2E2E] rounded-2xl p-4 mb-5">
+            <h3 className="font-semibold mb-2">Resume your session</h3>
+            <div className="flex justify-between items-center">
+              <span className="text-[#9E9E9E]">The Europe Capitals</span>
+              <div className="w-24 h-2 bg-[#3A3A3A] rounded-full overflow-hidden">
+                <div className="h-full bg-[#2563EB]" style={{ width: '60%' }}></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Highlights */}
+          <h3 className="text-lg font-semibold mb-3">Subject Progress</h3>
+          {Object.entries(progress).map(([subj, val]) => (
+            <div key={subj} className="mb-2">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="capitalize">{subj}</span>
+                <span>{val}%</span>
+              </div>
+              <div className="w-full h-2 bg-[#2E2E2E] rounded-full">
+                <div
+                  className={`h-full rounded-full ${
+                    subj === 'math'
+                      ? 'bg-[#9333EA]'
+                      : subj === 'science'
+                      ? 'bg-[#EC4899]'
+                      : subj === 'english'
+                      ? 'bg-[#2563EB]'
+                      : 'bg-[#F59E0B]'
+                  }`}
+                  style={{ width: `${val}%` }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </main>
+
+        {/* Bottom Navigation */}
+        <nav className="bg-[#2E2E2E] p-3 flex justify-around text-sm">
+          <button className="text-[#2563EB]" onClick={() => setScreen('dashboard')}>🏠 Home</button>
+          <button onClick={() => setScreen('progress')}>📈 Progress</button>
+          <button onClick={() => setScreen('rewards')}>🎁 Rewards</button>
+          <button onClick={() => setScreen('profileSettings')}>👤 Profile</button>
+        </nav>
+      </div>
+    );
+  };
+
+  // ---------------- VOICE TUTOR -----------------
+
+  const VoiceTutor = () => {
+    const { setScreen, aiChat, addAiMessage } = useApp();
+    const [speaking, setSpeaking] = useState(true);
+    const [input, setInput] = useState('');
+
+    useEffect(() => {
+      const timer = setTimeout(() => setSpeaking(false), 2500);
+      return () => clearTimeout(timer);
+    }, [aiChat]);
+
+    const handleSend = () => {
+      if (input.trim()) {
+        addAiMessage('user', input);
+        setInput('');
+        setSpeaking(true);
+        setTimeout(() => {
+          addAiMessage('ai', "Sure! Here’s a simpler explanation of that concept...");
+        }, 1000);
+      }
+    };
+
+    return (
+      <div className="h-screen flex flex-col bg-[#1F1F1F]">
+        <header className="p-4 text-center border-b border-[#2E2E2E]">
+          <h2 className="font-semibold">Class 10 • Science • Chemical Reactions</h2>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-4 space-y-3">
+          {aiChat.length === 0 && (
+            <p className="text-center text-[#9E9E9E] mt-10">Ask me a question to begin your session.</p>
+          )}
+          {aiChat.map((m, i) => (
+            <div
+              key={i}
+              className={`p-3 rounded-xl w-fit max-w-[80%] ${
+                m.role === 'user'
+                  ? 'bg-[#2563EB] text-white self-end ml-auto'
+                  : 'bg-[#2E2E2E] text-[#E0E0E0]'
+              }`}
+            >
+              {m.text}
+            </div>
+          ))}
+          {speaking && (
+            <div className="flex justify-center mt-6">
+              <div className="wave">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="bar" style={{ animationDelay: `${i * 0.1}s` }}></div>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+
+        <footer className="p-4 bg-[#2E2E2E] flex items-center">
+          <input
+            type="text"
+            placeholder="Ask your tutor..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="flex-1 p-3 bg-[#1F1F1F] rounded-xl text-white mr-3 focus:outline-none"
+          />
+          <button
+            onClick={handleSend}
+            className="bg-[#2563EB] px-4 py-2 rounded-xl font-semibold text-white"
+          >
+            🎤
+          </button>
+        </footer>
+      </div>
+    );
+  };
+  // ---------------- PROGRESS SCREEN -----------------
+
+  const ProgressScreen = () => {
+    const { progress, setScreen } = useApp();
+
+    return (
+      <div className="h-screen flex flex-col bg-[#1F1F1F]">
+        <header className="p-4 text-center border-b border-[#2E2E2E]">
+          <h2 className="font-semibold text-lg">Your Progress</h2>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-5">
+          <h3 className="text-md font-semibold mb-4">Weekly Study Time</h3>
+          <div className="flex gap-1 mb-6">
+            {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i)=>(
+              <div key={i} className="flex-1 flex flex-col items-center">
+                <div className="w-5 bg-[#2563EB] rounded-lg" style={{height:`${(i+3)*8}px`}}></div>
+                <span className="text-xs mt-1 text-[#9E9E9E]">{d}</span>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="text-md font-semibold mb-2">Subjects Mastered</h3>
+          {Object.entries(progress).map(([subject, value]) => (
+            <div key={subject} className="mb-3">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="capitalize">{subject}</span>
+                <span>{value}%</span>
+              </div>
+              <div className="w-full h-2 bg-[#2E2E2E] rounded-full">
+                <div
+                  className={`h-full rounded-full ${
+                    subject === 'math'
+                      ? 'bg-[#9333EA]'
+                      : subject === 'science'
+                      ? 'bg-[#EC4899]'
+                      : subject === 'english'
+                      ? 'bg-[#2563EB]'
+                      : 'bg-[#F59E0B]'
+                  }`}
+                  style={{ width: `${value}%` }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </main>
+
+        <nav className="bg-[#2E2E2E] p-3 flex justify-around text-sm">
+          <button onClick={() => setScreen('dashboard')}>🏠 Home</button>
+          <button className="text-[#2563EB]">📈 Progress</button>
+          <button onClick={() => setScreen('rewards')}>🎁 Rewards</button>
+          <button onClick={() => setScreen('profileSettings')}>👤 Profile</button>
+        </nav>
+      </div>
+    );
+  };
+
+  // ---------------- REWARDS SCREEN -----------------
+
+  const RewardsScreen = () => {
+    const { user, setScreen } = useApp();
+    return (
+      <div className="h-screen flex flex-col bg-[#1F1F1F]">
+        <header className="p-4 text-center border-b border-[#2E2E2E]">
+          <h2 className="font-semibold text-lg">Rewards & Badges</h2>
+        </header>
+        <main className="flex-1 overflow-y-auto p-5">
+          <div className="bg-[#2E2E2E] rounded-2xl p-4 mb-5 text-center">
+            <p className="text-[#9E9E9E] mb-2">EduCoins Balance</p>
+            <h1 className="text-3xl font-semibold text-[#2563EB]">💎 {user.coins}</h1>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {['Quick Learner','Quiz Master','Voice Wizard','Consistency Star'].map((badge,i)=>(
+              <div key={i} className="bg-[#2E2E2E] rounded-2xl p-4 text-center">
+                <p className="text-[#E0E0E0] font-semibold mb-1">{badge}</p>
+                <span className="text-[#9E9E9E] text-sm">Unlocked 🟢</span>
+              </div>
+            ))}
+          </div>
+        </main>
+
+        <nav className="bg-[#2E2E2E] p-3 flex justify-around text-sm">
+          <button onClick={() => setScreen('dashboard')}>🏠 Home</button>
+          <button onClick={() => setScreen('progress')}>📈 Progress</button>
+          <button className="text-[#2563EB]">🎁 Rewards</button>
+          <button onClick={() => setScreen('profileSettings')}>👤 Profile</button>
+        </nav>
+      </div>
+    );
+  };
+
+  // ---------------- PROFILE SETTINGS -----------------
+
+  const ProfileSettings = () => {
+    const { user, setScreen } = useApp();
+    return (
+      <div className="h-screen flex flex-col bg-[#1F1F1F]">
+        <header className="p-4 text-center border-b border-[#2E2E2E]">
+          <h2 className="font-semibold text-lg">Profile</h2>
+        </header>
+        <main className="flex-1 overflow-y-auto p-5">
+          <div className="bg-[#2E2E2E] rounded-2xl p-4 mb-4">
+            <p className="text-[#9E9E9E] text-sm mb-1">Name</p>
+            <p className="text-lg font-semibold">{user.name}</p>
+          </div>
+          <div className="bg-[#2E2E2E] rounded-2xl p-4 mb-4">
+            <p className="text-[#9E9E9E] text-sm mb-1">Class</p>
+            <p className="text-lg font-semibold">{user.class}</p>
+          </div>
+          <div className="bg-[#2E2E2E] rounded-2xl p-4">
+            <p className="text-[#9E9E9E] text-sm mb-1">Board</p>
+            <p className="text-lg font-semibold">CBSE</p>
+          </div>
+        </main>
+
+        <nav className="bg-[#2E2E2E] p-3 flex justify-around text-sm">
+          <button onClick={() => setScreen('dashboard')}>🏠 Home</button>
+          <button onClick={() => setScreen('progress')}>📈 Progress</button>
+          <button onClick={() => setScreen('rewards')}>🎁 Rewards</button>
+          <button className="text-[#2563EB]">👤 Profile</button>
+        </nav>
+      </div>
+    );
+  };
+
+  // ---------------- APP ROUTER -----------------
+
+  const App = () => {
+    const { screen } = useApp();
+
+    switch(screen) {
+      case 'onboarding': return <Onboarding />;
+      case 'profile': return <ProfileSetup />;
+      case 'dashboard': return <Dashboard />;
+      case 'voice': return <VoiceTutor />;
+      case 'progress': return <ProgressScreen />;
+      case 'rewards': return <RewardsScreen />;
+      case 'profileSettings': return <ProfileSettings />;
+      default: return <Onboarding />;
+    }
+  };
+
+  // ---------------- RENDER APP -----------------
+
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <AppProvider>
+      <App />
+    </AppProvider>
+  );
+
+  </script>
+</body>
+</html>
+
+
+
