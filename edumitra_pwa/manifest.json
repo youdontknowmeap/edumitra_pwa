@@ -1,11 +1,13 @@
 {
   "name": "EduMitra",
   "short_name": "EduMitra",
-  "start_url": "index.html",
+  "description": "An AI-powered, voice-first tutor for CBSE students (Grades 6–12). Learn through interactive 10-minute sessions using EduCoins.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#1F1F1F",
   "theme_color": "#2563EB",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -19,3 +21,4 @@
     }
   ]
 }
+
